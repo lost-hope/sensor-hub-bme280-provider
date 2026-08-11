@@ -1,0 +1,9 @@
+{
+  "name": "sensor-hub-bme280-provider",
+  "build": {
+    "libArchive": false
+  },
+  "dependencies": {
+    "adafruit/Adafruit BME280 Library": "^2.3.0"
+  }
+}
