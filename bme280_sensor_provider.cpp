@@ -39,12 +39,14 @@ class BME280SensorUsermod : public Usermod {
     uint16_t checkIntervalS = 30; // how often to read the sensor
     String namePrefix = "bme280"; // sensor names become "<prefix>_temperature/_humidity/_pressure"
     uint8_t precision = 1;        // decimal places published for all three readings
+    uint8_t priority = 100;       // getValue() selection priority - lower wins among sensors of the same SensorType (see sensor_bus.h)
 
     static const char _name[];
     static const char _enabled[];
     static const char _checkInterval[];
     static const char _namePrefix[];
     static const char _precision[];
+    static const char _priority[];
 
     bool beginSensor() {
       // BME280 breakout boards commonly strap the address to either 0x76 or 0x77.
@@ -53,9 +55,9 @@ class BME280SensorUsermod : public Usermod {
 
     void registerSensors() {
       if (!hub || tempHandle != SENSOR_HANDLE_INVALID) return; // already registered
-      tempHandle     = hub->registerSensor((namePrefix + "_temperature").c_str(), SensorType::Temperature, nullptr, nullptr, precision);
-      humidityHandle = hub->registerSensor((namePrefix + "_humidity").c_str(),    SensorType::Humidity,    nullptr, nullptr, precision);
-      pressureHandle = hub->registerSensor((namePrefix + "_pressure").c_str(),    SensorType::Pressure,    nullptr, nullptr, precision);
+      tempHandle     = hub->registerSensor((namePrefix + "_temperature").c_str(), SensorType::Temperature, nullptr, nullptr, precision, priority);
+      humidityHandle = hub->registerSensor((namePrefix + "_humidity").c_str(),    SensorType::Humidity,    nullptr, nullptr, precision, priority);
+      pressureHandle = hub->registerSensor((namePrefix + "_pressure").c_str(),    SensorType::Pressure,    nullptr, nullptr, precision, priority);
     }
 
     void setSensorsAvailable(bool available) {
@@ -119,6 +121,7 @@ class BME280SensorUsermod : public Usermod {
       top[FPSTR(_checkInterval)] = checkIntervalS;
       top[FPSTR(_namePrefix)] = namePrefix;
       top[FPSTR(_precision)] = precision;
+      top[FPSTR(_priority)] = priority;
     }
 
     bool readFromConfig(JsonObject& root) override {
@@ -128,6 +131,7 @@ class BME280SensorUsermod : public Usermod {
       configComplete &= getJsonValue(top[FPSTR(_checkInterval)], checkIntervalS);
       configComplete &= getJsonValue(top[FPSTR(_namePrefix)], namePrefix);
       configComplete &= getJsonValue(top[FPSTR(_precision)], precision);
+      configComplete &= getJsonValue(top[FPSTR(_priority)], priority);
       return configComplete;
     }
 
@@ -135,6 +139,7 @@ class BME280SensorUsermod : public Usermod {
       settingsScript.print(F("addInfo('BME280Sensor:checkInterval',1,'seconds between sensor reads');"));
       settingsScript.print(F("addInfo('BME280Sensor:namePrefix',1,'sensor names become &lt;prefix&gt;_temperature/_humidity/_pressure - must be unique across all sensor providers');"));
       settingsScript.print(F("addInfo('BME280Sensor:precision',1,'decimal places published for all three readings');"));
+      settingsScript.print(F("addInfo('BME280Sensor:priority',1,'getValue() selection priority - lower wins if another provider also registers a Temperature/Humidity/Pressure sensor');"));
     }
 };
 
@@ -143,6 +148,7 @@ const char BME280SensorUsermod::_enabled[]       PROGMEM = "enabled";
 const char BME280SensorUsermod::_checkInterval[] PROGMEM = "checkInterval";
 const char BME280SensorUsermod::_namePrefix[]    PROGMEM = "namePrefix";
 const char BME280SensorUsermod::_precision[]     PROGMEM = "precision";
+const char BME280SensorUsermod::_priority[]      PROGMEM = "priority";
 
 static BME280SensorUsermod bme280_sensor;
 REGISTER_USERMOD(bme280_sensor);
